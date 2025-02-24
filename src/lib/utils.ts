@@ -3,7 +3,7 @@ import * as ort from "onnxruntime-web";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-const MODEL_PATH = "/models/takumi.onnx";
+const MODEL_PATH = "https://storage.preps.cc/e029c9ddbb3e951a5355e24c8dc37533/takumi.onnx";
 
 async function loadImageFromPath(path: string, width = 640, height = 640) {
   var imageData = await Jimp.read(path).then((imageBuffer) => {

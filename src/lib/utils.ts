@@ -3,7 +3,7 @@ import * as ort from "onnxruntime-web";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-const MODEL_PATH =
+export const MODEL_PATH =
   "https://storage.preps.cc/e029c9ddbb3e951a5355e24c8dc37533/takumi.onnx";
 
 async function loadImageFromPath(path: string, width = 640, height = 640) {
@@ -80,17 +80,10 @@ function imageDataToTensor(image: any, dims: number[]): ort.Tensor {
   return new ort.Tensor("float32", float32Data, dims);
 }
 
-export async function runYOLOModel(imagePath: string) {
-  ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
-  ort.env.wasm.numThreads = 1;
-  ort.env.wasm.simd = false;
-  ort.env.wasm.proxy = false;
-
-  const session = await ort.InferenceSession.create(MODEL_PATH, {
-    executionProviders: ["wasm"],
-    graphOptimizationLevel: "all",
-  });
-
+export async function runYOLOModel(
+  session: ort.InferenceSession,
+  imagePath: string
+) {
   const image = await loadImageFromPath(imagePath, 640, 640);
   const imageTensor = imageDataToTensor(image, [1, 3, 640, 640]);
 

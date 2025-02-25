@@ -3,7 +3,8 @@ import * as ort from "onnxruntime-web";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-const MODEL_PATH = "https://storage.preps.cc/e029c9ddbb3e951a5355e24c8dc37533/takumi.onnx";
+const MODEL_PATH =
+  "https://storage.preps.cc/e029c9ddbb3e951a5355e24c8dc37533/takumi.onnx";
 
 async function loadImageFromPath(path: string, width = 640, height = 640) {
   var imageData = await Jimp.read(path).then((imageBuffer) => {
@@ -14,6 +15,45 @@ async function loadImageFromPath(path: string, width = 640, height = 640) {
   });
 
   return imageData;
+}
+
+function getImageTensorFromVideo(video: HTMLVideoElement): ort.Tensor {
+  const modelSize = 640; // YOLO ต้องการ 640x640
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
+  // คำนวณให้ภาพอยู่ตรงกลางแบบ letterbox (ใส่ขอบดำแทน stretch)
+  const scale = Math.min(
+    modelSize / video.videoWidth,
+    modelSize / video.videoHeight
+  );
+  const newWidth = Math.round(video.videoWidth * scale);
+  const newHeight = Math.round(video.videoHeight * scale);
+
+  canvas.width = modelSize;
+  canvas.height = modelSize;
+
+  // เคลียร์พื้นหลังให้เป็นสีดำ
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, modelSize, modelSize);
+
+  // วาดภาพตรงกลางแบบ maintain aspect ratio
+  ctx.drawImage(
+    video,
+    (modelSize - newWidth) / 2,
+    (modelSize - newHeight) / 2,
+    newWidth,
+    newHeight
+  );
+
+  const imageData = ctx.getImageData(0, 0, modelSize, modelSize);
+  const float32Data = new Float32Array(modelSize * modelSize * 3);
+
+  for (let i = 0, j = 0; i < imageData.data.length; i += 4, j++) {
+    float32Data[j] = imageData.data[i] / 255.0;
+  }
+
+  return new ort.Tensor("float32", float32Data, [1, 3, modelSize, modelSize]);
 }
 
 function imageDataToTensor(image: any, dims: number[]): ort.Tensor {
@@ -68,7 +108,11 @@ const labels: Record<string, string> = {
   "1": "Takuma Sumi",
 };
 
-function processYOLOOutput(outputData: Record<string, ort.Tensor>) {
+function processYOLOOutput(
+  outputData: Record<string, ort.Tensor>,
+  width: number = 640,
+  height: number = 640
+) {
   const output = outputData[Object.keys(outputData)[0]];
   const data = output.data as Float32Array;
   const numDetections = data.length / 6;
@@ -82,12 +126,12 @@ function processYOLOOutput(outputData: Record<string, ort.Tensor>) {
     const score = data[i * 6 + 4];
     const classId = Math.round(data[i * 6 + 5]);
 
-    if (score > 0.2) {
+    if (score > 0.5) {
       boxes.push({
-        x,
-        y,
-        w,
-        h,
+        x: x,
+        y: y,
+        w: w,
+        h: h,
         score,
         classId: classId.toString(),
         label: labels[classId.toString()],
@@ -111,16 +155,20 @@ export function drawDetections(canvas: HTMLCanvasElement, detections: any[]) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (const { x, y, w, h, score, label } of detections) {
+    console.log(x, y, w, h);
+
+    const x1 = x - w / 2;
+    const y1 = y - h / 2;
+
+    const boxWidth = w;
+    const boxHeight = h;
+
     ctx.strokeStyle = "red";
     ctx.lineWidth = 2;
-    ctx.strokeRect(x - w / 2, y - h / 2, w, h);
+    ctx.strokeRect(x1, y1, boxWidth, boxHeight);
 
     ctx.fillStyle = "red";
     ctx.font = "16px Arial";
-    ctx.fillText(
-      `${label} (${(score * 100).toFixed(1)}%)`,
-      x - w / 2,
-      y - h / 2 - 5
-    );
+    ctx.fillText(`${label} (${(score * 100).toFixed(1)}%)`, x1, y1 - 5);
   }
 }

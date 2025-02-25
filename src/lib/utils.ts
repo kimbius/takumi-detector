@@ -3,6 +3,11 @@ import * as ort from "onnxruntime-web";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
+ort.env.wasm.numThreads = 1;
+ort.env.wasm.simd = false;
+ort.env.wasm.proxy = false;
+
 export const MODEL_PATH =
   "https://storage.preps.cc/e029c9ddbb3e951a5355e24c8dc37533/takumi.onnx";
 

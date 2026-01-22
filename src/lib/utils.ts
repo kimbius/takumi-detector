@@ -9,7 +9,7 @@ ort.env.wasm.simd = false;
 ort.env.wasm.proxy = false;
 
 export const MODEL_PATH =
-  "https://storage.preps.cc/e029c9ddbb3e951a5355e24c8dc37533/takumi.onnx";
+  "https://storage-preps.bius.work/e029c9ddbb3e951a5355e24c8dc37533/takumi.onnx";
 
 async function loadImageFromPath(path: string, width = 640, height = 640) {
   var imageData = await Jimp.read(path).then((imageBuffer) => {

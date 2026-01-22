@@ -3,7 +3,8 @@ import * as ort from "onnxruntime-web";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
+ort.env.wasm.wasmPaths =
+  "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.simd = false;
 ort.env.wasm.proxy = false;
@@ -30,7 +31,7 @@ function getImageTensorFromVideo(video: HTMLVideoElement): ort.Tensor {
   // คำนวณให้ภาพอยู่ตรงกลางแบบ letterbox (ใส่ขอบดำแทน stretch)
   const scale = Math.min(
     modelSize / video.videoWidth,
-    modelSize / video.videoHeight
+    modelSize / video.videoHeight,
   );
   const newWidth = Math.round(video.videoWidth * scale);
   const newHeight = Math.round(video.videoHeight * scale);
@@ -48,7 +49,7 @@ function getImageTensorFromVideo(video: HTMLVideoElement): ort.Tensor {
     (modelSize - newWidth) / 2,
     (modelSize - newHeight) / 2,
     newWidth,
-    newHeight
+    newHeight,
   );
 
   const imageData = ctx.getImageData(0, 0, modelSize, modelSize);
@@ -66,7 +67,7 @@ function imageDataToTensor(image: any, dims: number[]): ort.Tensor {
   const [redArray, greenArray, blueArray] = new Array(
     new Array<number>(),
     new Array<number>(),
-    new Array<number>()
+    new Array<number>(),
   );
 
   for (let i = 0; i < imageBufferData.length; i += 4) {
@@ -87,7 +88,7 @@ function imageDataToTensor(image: any, dims: number[]): ort.Tensor {
 
 export async function runYOLOModel(
   session: ort.InferenceSession,
-  imagePath: string
+  imagePath: string,
 ) {
   const image = await loadImageFromPath(imagePath, 640, 640);
   const imageTensor = imageDataToTensor(image, [1, 3, 640, 640]);
@@ -109,7 +110,7 @@ const labels: Record<string, string> = {
 function processYOLOOutput(
   outputData: Record<string, ort.Tensor>,
   width: number = 640,
-  height: number = 640
+  height: number = 640,
 ) {
   const output = outputData[Object.keys(outputData)[0]];
   const data = output.data as Float32Array;
